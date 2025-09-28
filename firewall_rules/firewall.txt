@@ -1,0 +1,105 @@
+— Kali Linux is also **Debian-based**, so it uses the same tools as Ubuntu. By default, **Kali disables UFW** (because penetration testers often need unrestricted traffic). But you can enable and configure it exactly like Ubuntu.
+---
+
+## 🔹 Step-by-Step Guide (Kali Linux with UFW)
+
+1. **Open firewall configuration tool**
+
+   * Open a terminal.
+   * Make sure `ufw` is installed (it’s not always preinstalled in Kali):
+
+     ```bash
+     sudo apt update
+     sudo apt install ufw -y
+     ```
+
+2. **Enable UFW (if disabled)**
+
+   * First, allow SSH so you don’t get locked out (important if using Kali over remote SSH):
+
+     ```bash
+     sudo ufw allow 22/tcp
+     ```
+   * Then enable UFW:
+
+     ```bash
+     sudo ufw enable
+     ```
+
+3. **List current firewall rules**
+
+   ```bash
+   sudo ufw status verbose
+   ```
+
+4. **Add a rule to block inbound traffic on port 23 (Telnet)**
+
+   ```bash
+   sudo ufw deny 23/tcp
+   ```
+
+   🔎 If you don’t have Telnet running, you can use a test port like `2323`:
+
+   ```bash
+   sudo ufw deny 2323/tcp
+   ```
+
+5. **Test the rule**
+
+   * Start a listener in one terminal:
+
+     ```bash
+     nc -l -p 2323
+     ```
+   * In another terminal, test the connection:
+
+     ```bash
+     nc -vz localhost 2323
+     ```
+   * Or scan with nmap:
+
+     ```bash
+     nmap -p 23,2323 -Pn localhost
+     ```
+   * If blocked, you’ll see **filtered/denied** instead of open.
+
+6. **Remove the test block rule to restore original state**
+
+   ```bash
+   sudo ufw status numbered
+   sudo ufw delete <rule-number>
+   ```
+
+   Or just re-allow:
+
+   ```bash
+   sudo ufw allow 23/tcp
+   ```
+
+7. **Document commands used**
+
+   * Record outputs of:
+
+     * `sudo ufw status numbered` (before/after).
+     * `nmap` or `nc` results.
+   * Take screenshots as proof.
+
+8. **Summarize how firewall filters traffic**
+
+   * UFW (on Kali) is a **wrapper around iptables**.
+   * Each packet is checked against rules (protocol, port, direction).
+   * If rule says *deny/block*, traffic is dropped; if *allow*, it passes.
+   * By default, UFW blocks incoming and allows outgoing traffic once enabled.
+   * Blocking Telnet (port 23) reduces exposure to an outdated, insecure protocol.
+
+---
+
+⚠️ Note for Kali users:
+
+* Many labs require **iptables directly** instead of UFW. If that’s the case:
+
+  ```bash
+  sudo iptables -I INPUT -p tcp --dport 23 -j DROP
+  sudo iptables -L INPUT -n --line-numbers
+  sudo iptables -D INPUT <line-number>
+  ```
